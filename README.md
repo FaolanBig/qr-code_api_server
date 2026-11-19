@@ -99,7 +99,7 @@ Successful responses contain the generated PNG inside the JSON response:
 }
 ```
 
-For complete request and response documentation, see [API documentation](docs/api.md) or retrieve the machine-readable [OpenAPI specification](docs/openapi.yaml) through `/openapi.yaml`. Release-candidate notes are available in [docs/releases/v1.0.0-rc.md](docs/releases/v1.0.0-rc.md).
+For complete request and response documentation, see [API documentation](docs/api.md) or retrieve the machine-readable [OpenAPI specification](docs/openapi.yaml) through `/openapi.yaml`. Release-candidate notes are available in [docs/releases/v1.0.0-rc.md](docs/releases/v1.0.0-rc.md). A static project showcase is available in [index.html](index.html).
 
 ## Configuration
 
