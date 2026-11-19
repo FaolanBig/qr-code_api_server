@@ -2,10 +2,8 @@ name: qr-code-api
 
 services:
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: ghcr.io/faolanbig/qr-code-api-server:latest
+    pull_policy: always
     restart: unless-stopped
     init: true
     ports:

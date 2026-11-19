@@ -49,11 +49,11 @@ curl --fail --request POST http://localhost:8080/api/v1/qr/url \
 ### Docker
 
 ```bash
-docker build -t qr-code-api:local .
+docker pull ghcr.io/faolanbig/qr-code-api-server:latest
 docker run --rm --name qr-code-api \
   --publish 8080:8080 \
   --env API_KEY="replace-with-at-least-16-random-characters" \
-  qr-code-api:local
+  ghcr.io/faolanbig/qr-code-api-server:latest
 
 curl --fail http://localhost:8080/healthz
 ```
@@ -65,7 +65,8 @@ Copy `.env.example` to `.env`, replace the placeholder API key, and start the se
 ```bash
 cp .env.example .env
 # Edit .env and replace API_KEY=replace-with-a-random-secret
-docker compose up --build -d
+docker compose pull
+docker compose up -d
 docker compose ps
 curl --fail http://127.0.0.1:8080/healthz
 ```
@@ -76,7 +77,7 @@ Stop and remove the service with:
 docker compose down
 ```
 
-The Compose configuration builds the same Dockerfile and runs the container read-only with dropped capabilities. The runtime uses Debian 12 slim, while the build stage uses Go Alpine; the container runs as a non-root user, includes `/bin/sh` and `curl`, and has a built-in Docker health check.
+The Compose configuration runs `ghcr.io/faolanbig/qr-code-api-server:latest` read-only with dropped capabilities. The runtime uses Debian 12 slim, while the build stage uses Go Alpine; the container runs as a non-root user, includes `/bin/sh` and `curl`, and has a built-in Docker health check.
 
 ## API overview
 
@@ -151,7 +152,7 @@ kubectl apply -f deploy/kubernetes/service.yaml
 Or build and deploy the image, then use Kustomize:
 
 ```bash
-docker build -t ghcr.io/faolanbig/qr-code-api-server:local .
+docker pull ghcr.io/faolanbig/qr-code-api-server:latest
 kubectl apply -k deploy/kubernetes
 ```
 
