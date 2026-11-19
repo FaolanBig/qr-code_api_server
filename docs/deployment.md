@@ -2,10 +2,10 @@
 
 ## Docker
 
-Build:
+Pull:
 
 ```bash
-docker build -t qr-code-api:local .
+docker pull ghcr.io/faolanbig/qr-code-api-server:latest
 ```
 
 Run:
@@ -15,7 +15,7 @@ docker run --rm \
   --name qr-code-api \
   --publish 127.0.0.1:8080:8080 \
   --env API_KEY="replace-with-a-random-key-at-least-16-characters" \
-  qr-code-api:local
+  ghcr.io/faolanbig/qr-code-api-server:latest
 ```
 
 The container image:
@@ -75,7 +75,7 @@ The example Deployment references:
 ghcr.io/faolanbig/qr-code-api-server:latest
 ```
 
-Build and push a tagged image into your registry, or change `spec.template.spec.containers[].image` to match an approved image.
+Use `ghcr.io/faolanbig/qr-code-api-server:latest` as the published image, or change `spec.template.spec.containers[].image` to an approved immutable tag or digest.
 
 ## Logo configuration
 
