@@ -58,7 +58,25 @@ docker run --rm --name qr-code-api \
 curl --fail http://localhost:8080/healthz
 ```
 
-The image uses `alpine`, runs as a non-root user, includes `/bin/sh` and `curl`, and has a built-in Docker health check.
+### Docker Compose
+
+Copy `.env.example` to `.env`, replace the placeholder API key, and start the service:
+
+```bash
+cp .env.example .env
+# Edit .env and replace API_KEY=replace-with-a-random-secret
+docker compose up --build -d
+docker compose ps
+curl --fail http://127.0.0.1:8080/healthz
+```
+
+Stop and remove the service with:
+
+```bash
+docker compose down
+```
+
+The Compose configuration builds the same Dockerfile and runs the container read-only with dropped capabilities. The runtime uses Debian 12 slim, while the build stage uses Go Alpine; the container runs as a non-root user, includes `/bin/sh` and `curl`, and has a built-in Docker health check.
 
 ## API overview
 
