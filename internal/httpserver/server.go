@@ -26,6 +26,7 @@ type Server struct {
 	apiKey       string
 	fallbackLogo []byte
 	logoMaxBytes int
+	openAPISpec  []byte
 	logger       *slog.Logger
 }
 
@@ -48,6 +49,12 @@ func WithFallbackLogo(data []byte) ServerOption {
 	}
 }
 
+func WithOpenAPISpec(spec []byte) ServerOption {
+	return func(server *Server) {
+		server.openAPISpec = spec
+	}
+}
+
 func WithLogoMaxBytes(maxBytes int) ServerOption {
 	return func(server *Server) {
 		if maxBytes > 0 {
@@ -66,6 +73,7 @@ func (s *Server) Handler() http.Handler {
 
 	r.Get("/healthz", s.health)
 	r.Get("/readyz", s.ready)
+	r.Get("/openapi.yaml", s.openAPI)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(s.apiKeyMiddleware)
@@ -86,6 +94,17 @@ func (s *Server) Handler() http.Handler {
 
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (s *Server) openAPI(w http.ResponseWriter, r *http.Request) {
+	if len(s.openAPISpec) == 0 {
+		writeError(w, http.StatusNotFound, "OpenAPI specification is not configured")
+		return
+	}
+	w.Header().Set("Content-Type", "application/yaml; charset=utf-8")
+	w.Header().Set("Content-Length", strconv.Itoa(len(s.openAPISpec)))
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(s.openAPISpec)
 }
 
 func (s *Server) ready(w http.ResponseWriter, r *http.Request) {

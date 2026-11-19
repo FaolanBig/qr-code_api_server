@@ -26,6 +26,7 @@ The container image:
 - Exposes port `8080`.
 - Includes a Docker health check for `/healthz`.
 - Includes `assets/fallback-logo.png` and validates it at startup.
+- Includes `docs/openapi.yaml` and serves it publicly at `/openapi.yaml`.
 - Is stateless and requires no mounted volumes.
 
 For production, run containers with read-only root filesystems and resource limits where possible.
@@ -80,7 +81,7 @@ Build and push a tagged image into your registry, or change `spec.template.spec.
 
 The image includes `/app/assets/fallback-logo.png`, and the ConfigMap points `FALLBACK_LOGO_PATH` to it. Override the path by mounting or baking a replacement PNG and updating `FALLBACK_LOGO_PATH`.
 
-The server validates the fallback PNG and fails startup if it is missing or invalid. `LOGO_MAX_BYTES` limits custom upload and Base64 PNG sizes and defaults to `1048576`.
+The server validates the fallback PNG and fails startup if it is missing or invalid. `LOGO_MAX_BYTES` limits custom upload and Base64 PNG sizes and defaults to `1048576`. `OPENAPI_PATH` controls the specification file, which defaults to `/app/docs/openapi.yaml` in Kubernetes and `docs/openapi.yaml` locally.
 
 For a read-only container, mount a writable `/tmp` only if needed. Logo decoding does not write logo files or temporary data.
 

@@ -31,6 +31,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	openAPISpec, err := os.ReadFile(cfg.OpenAPIPath)
+	if err != nil {
+		logger.Error("OpenAPI specification could not be read", "path", cfg.OpenAPIPath, "error", err)
+		os.Exit(1)
+	}
+
 	server := &http.Server{
 		Addr: cfg.Address,
 		Handler: httpserver.New(
@@ -38,6 +44,7 @@ func main() {
 			logger,
 			httpserver.WithFallbackLogo(fallbackLogo),
 			httpserver.WithLogoMaxBytes(cfg.LogoMaxBytes),
+			httpserver.WithOpenAPISpec(openAPISpec),
 		).Handler(),
 		ReadTimeout:  cfg.ReadTimeout,
 		WriteTimeout: cfg.WriteTimeout,

@@ -34,6 +34,21 @@ func makeServerTestPNG(t *testing.T) []byte {
 	return data.Bytes()
 }
 
+func TestOpenAPIEndpoint(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/openapi.yaml", nil)
+	response := httptest.NewRecorder()
+	New("test-api-key-123456", nil, WithOpenAPISpec([]byte("openapi: 3.1.0\n"))).Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("got status %d", response.Code)
+	}
+	if response.Header().Get("Content-Type") != "application/yaml; charset=utf-8" {
+		t.Fatalf("unexpected content type: %s", response.Header().Get("Content-Type"))
+	}
+	if !strings.Contains(response.Body.String(), "openapi: 3.1.0") {
+		t.Fatalf("unexpected OpenAPI body: %s", response.Body.String())
+	}
+}
+
 func TestHealthAndReadinessArePublic(t *testing.T) {
 	handler := testHandler()
 	for _, path := range []string{"/healthz", "/readyz"} {

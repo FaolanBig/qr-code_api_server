@@ -13,3 +13,4 @@ data:
   SHUTDOWN_TIMEOUT: "15s"
   FALLBACK_LOGO_PATH: "/app/assets/fallback-logo.png"
   LOGO_MAX_BYTES: "1048576"
+  OPENAPI_PATH: "/app/docs/openapi.yaml"

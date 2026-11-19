@@ -17,6 +17,7 @@ A production-oriented HTTP service written in Go that converts structured inform
 - JSON validation, structured errors, request logging, security headers, and graceful shutdown
 - Kubernetes Deployment, Service, ConfigMap, and Secret example
 - Small, non-root container with a basic shell and `curl`
+- Public OpenAPI 3.1 specification at `/openapi.yaml`
 
 ## Quick start
 
@@ -61,7 +62,7 @@ The image uses `alpine`, runs as a non-root user, includes `/bin/sh` and `curl`,
 
 ## API overview
 
-Authentication applies to every `/api/v1/*` endpoint. The public health endpoints are `/healthz` and `/readyz`.
+Authentication applies to every `/api/v1/*` endpoint. The public endpoints are `/healthz`, `/readyz`, and `/openapi.yaml`; `/openapi.yaml` contains the complete machine-readable API specification.
 
 ```text
 POST /api/v1/qr/url
@@ -98,7 +99,7 @@ Successful responses contain the generated PNG inside the JSON response:
 }
 ```
 
-For complete request and response documentation, see [API documentation](docs/api.md).
+For complete request and response documentation, see [API documentation](docs/api.md) or retrieve the machine-readable [OpenAPI specification](docs/openapi.yaml) through `/openapi.yaml`.
 
 ## Configuration
 
@@ -112,6 +113,7 @@ For complete request and response documentation, see [API documentation](docs/ap
 | `SHUTDOWN_TIMEOUT` | No | `15s` | Graceful shutdown timeout |
 | `FALLBACK_LOGO_PATH` | No | `assets/fallback-logo.png` | PNG used when `show_logo=true` has no custom logo |
 | `LOGO_MAX_BYTES` | No | `1048576` | Maximum custom or fallback PNG size |
+| `OPENAPI_PATH` | No | `docs/openapi.yaml` | OpenAPI specification file served at `/openapi.yaml` |
 
 Copy `.env.example` when preparing local environment configuration. `.env` is not loaded automatically; export the variables or use your process manager/container platform.
 

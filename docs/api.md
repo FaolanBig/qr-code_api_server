@@ -2,9 +2,11 @@
 
 Base URL: `/api/v1`
 
+The machine-readable OpenAPI 3.1 specification is available publicly at `/openapi.yaml` and in [openapi.yaml](openapi.yaml).
+
 ## Authentication
 
-Use one of these headers for every API endpoint except `/healthz` and `/readyz`:
+Use one of these headers for every API endpoint except `/healthz`, `/readyz`, and `/openapi.yaml`:
 
 ```text
 X-API-Key: your-secret-api-key

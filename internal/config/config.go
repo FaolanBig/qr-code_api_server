@@ -13,6 +13,7 @@ type Config struct {
 	APIKey           string
 	FallbackLogoPath string
 	LogoMaxBytes     int
+	OpenAPIPath      string
 	ReadTimeout      time.Duration
 	WriteTimeout     time.Duration
 	IdleTimeout      time.Duration
@@ -63,9 +64,14 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("LOGO_MAX_BYTES must be between 1024 and 10485760")
 	}
 
+	openAPIPath := strings.TrimSpace(os.Getenv("OPENAPI_PATH"))
+	if openAPIPath == "" {
+		openAPIPath = "docs/openapi.yaml"
+	}
+
 	return Config{
 		Address: address, APIKey: apiKey,
-		FallbackLogoPath: fallbackLogoPath, LogoMaxBytes: logoMaxBytes,
+		FallbackLogoPath: fallbackLogoPath, LogoMaxBytes: logoMaxBytes, OpenAPIPath: openAPIPath,
 		ReadTimeout: readTimeout, WriteTimeout: writeTimeout,
 		IdleTimeout: idleTimeout, ShutdownTimeout: shutdownTimeout,
 	}, nil

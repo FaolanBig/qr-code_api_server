@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 WORKDIR /app
 COPY --from=build --chown=app:app /out/qrcode-api /app/qrcode-api
 COPY --chown=app:app assets /app/assets
+COPY --chown=app:app docs/openapi.yaml /app/docs/openapi.yaml
 
 USER app
 EXPOSE 8080
