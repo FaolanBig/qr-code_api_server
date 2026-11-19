@@ -2,9 +2,12 @@ package httpserver
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"reflect"
+	"strconv"
 	"strings"
 
 	qr "github.com/FaolanBig/qr-code_api_server/internal/qrcode"
@@ -12,18 +15,45 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-const maxRequestBytes = 1 << 20
+const maxRequestBytes = 12 << 20
 
-type Server struct {
-	apiKey string
-	logger *slog.Logger
+type logoFields struct {
+	ShowLogo      bool   `json:"show_logo,omitempty"`
+	LogoPNGBase64 string `json:"logo_png_base64,omitempty"`
 }
 
-func New(apiKey string, logger *slog.Logger) *Server {
+type Server struct {
+	apiKey       string
+	fallbackLogo []byte
+	logoMaxBytes int
+	logger       *slog.Logger
+}
+
+func New(apiKey string, logger *slog.Logger, options ...ServerOption) *Server {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Server{apiKey: apiKey, logger: logger}
+	server := &Server{apiKey: apiKey, logoMaxBytes: 1024 * 1024, logger: logger}
+	for _, option := range options {
+		option(server)
+	}
+	return server
+}
+
+type ServerOption func(*Server)
+
+func WithFallbackLogo(data []byte) ServerOption {
+	return func(server *Server) {
+		server.fallbackLogo = data
+	}
+}
+
+func WithLogoMaxBytes(maxBytes int) ServerOption {
+	return func(server *Server) {
+		if maxBytes > 0 {
+			server.logoMaxBytes = maxBytes
+		}
+	}
 }
 
 func (s *Server) Handler() http.Handler {
@@ -75,6 +105,114 @@ func (s *Server) apiIndex(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func decodeRequest(w http.ResponseWriter, r *http.Request, destination any) ([]byte, bool) {
+	if strings.HasPrefix(strings.ToLower(r.Header.Get("Content-Type")), "multipart/form-data") {
+		return decodeMultipart(w, r, destination)
+	}
+	if !decodeJSON(w, r, destination) {
+		return nil, false
+	}
+	return nil, true
+}
+
+func decodeMultipart(w http.ResponseWriter, r *http.Request, destination any) ([]byte, bool) {
+	const bodyLimit = int64(maxRequestBytes)
+	r.Body = http.MaxBytesReader(w, r.Body, bodyLimit)
+	if err := r.ParseMultipartForm(bodyLimit); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid multipart request: "+err.Error())
+		return nil, false
+	}
+
+	for name, values := range r.MultipartForm.Value {
+		if len(values) == 0 {
+			continue
+		}
+		if !setFormField(reflect.ValueOf(destination).Elem(), name, values[0]) {
+			writeError(w, http.StatusBadRequest, "unknown multipart field: "+name)
+			return nil, false
+		}
+	}
+
+	var logo []byte
+	for _, fieldName := range []string{"logo", "logo_file"} {
+		fileHeaders := r.MultipartForm.File[fieldName]
+		if len(fileHeaders) == 0 {
+			continue
+		}
+		if len(fileHeaders) != 1 {
+			writeError(w, http.StatusBadRequest, "exactly one logo file is allowed")
+			return nil, false
+		}
+		file, err := fileHeaders[0].Open()
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "unable to open uploaded logo")
+			return nil, false
+		}
+		logo, err = io.ReadAll(io.LimitReader(file, 10*1024*1024+1))
+		file.Close()
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "unable to read uploaded logo")
+			return nil, false
+		}
+		if len(logo) > 10*1024*1024 {
+			writeError(w, http.StatusBadRequest, "logo exceeds maximum size")
+			return nil, false
+		}
+		break
+	}
+	return logo, true
+}
+
+func setFormField(target reflect.Value, name, value string) bool {
+	if target.Kind() == reflect.Pointer {
+		return setFormField(target.Elem(), name, value)
+	}
+	if target.Kind() != reflect.Struct {
+		return false
+	}
+	targetType := target.Type()
+	for i := 0; i < target.NumField(); i++ {
+		field := targetType.Field(i)
+		fieldValue := target.Field(i)
+		if field.Anonymous {
+			if setFormField(fieldValue, name, value) {
+				return true
+			}
+			continue
+		}
+		tag := strings.Split(field.Tag.Get("json"), ",")[0]
+		if tag == "" || tag == "-" || tag != name {
+			continue
+		}
+		switch fieldValue.Kind() {
+		case reflect.String:
+			fieldValue.SetString(value)
+		case reflect.Bool:
+			parsed, err := strconv.ParseBool(value)
+			if err != nil {
+				return false
+			}
+			fieldValue.SetBool(parsed)
+		case reflect.Int:
+			parsed, err := strconv.Atoi(value)
+			if err != nil {
+				return false
+			}
+			fieldValue.SetInt(int64(parsed))
+		case reflect.Float64:
+			parsed, err := strconv.ParseFloat(value, 64)
+			if err != nil {
+				return false
+			}
+			fieldValue.SetFloat(parsed)
+		default:
+			return false
+		}
+		return true
+	}
+	return false
+}
+
 func decodeJSON(w http.ResponseWriter, r *http.Request, destination any) bool {
 	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBytes)
 	decoder := json.NewDecoder(r.Body)
@@ -91,11 +229,44 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, destination any) bool {
 	return true
 }
 
-func imageOptions(recovery string, size int) qr.ImageOptions {
+func (s *Server) imageOptions(recovery string, size int, showLogo bool, logoBase64 string, multipartLogo []byte) (qr.ImageOptions, error) {
 	if strings.TrimSpace(recovery) == "" {
 		recovery = "medium"
 	}
-	return qr.ImageOptions{Size: size, Recovery: strings.ToLower(strings.TrimSpace(recovery))}
+	options := qr.ImageOptions{
+		Size:     size,
+		Recovery: strings.ToLower(strings.TrimSpace(recovery)),
+	}
+	if !showLogo {
+		return options, nil
+	}
+
+	if len(multipartLogo) > 0 {
+		if _, err := qr.ValidatePNGLogo(multipartLogo, s.logoMaxBytes); err != nil {
+			return qr.ImageOptions{}, err
+		}
+		options.Logo = multipartLogo
+		options.LogoSource = "custom"
+		return options, nil
+	}
+	if strings.TrimSpace(logoBase64) != "" {
+		logo, err := qr.DecodeBase64PNG(logoBase64, s.logoMaxBytes)
+		if err != nil {
+			return qr.ImageOptions{}, err
+		}
+		options.Logo = logo
+		options.LogoSource = "custom"
+		return options, nil
+	}
+	if len(s.fallbackLogo) > 0 {
+		if _, err := qr.ValidatePNGLogo(s.fallbackLogo, s.logoMaxBytes); err != nil {
+			return qr.ImageOptions{}, fmt.Errorf("invalid fallback logo: %w", err)
+		}
+		options.Logo = s.fallbackLogo
+		options.LogoSource = "fallback"
+		return options, nil
+	}
+	return qr.ImageOptions{}, fmt.Errorf("show_logo is enabled but no logo was provided and no fallback logo is configured")
 }
 
 func render(w http.ResponseWriter, payloadType, payload string, options qr.ImageOptions) {
@@ -112,8 +283,16 @@ func (s *Server) urlQR(w http.ResponseWriter, r *http.Request) {
 		URL      string `json:"url"`
 		Size     int    `json:"size"`
 		Recovery string `json:"recovery"`
+		logoFields
 	}
-	if !decodeJSON(w, r, &body) {
+	multipartLogo, ok := decodeRequest(w, r, &body)
+	if !ok {
+		return
+	}
+	options, err := s.imageOptions(body.Recovery, body.Size, body.ShowLogo, body.LogoPNGBase64, multipartLogo)
+	if err != nil {
+		w.Header().Set("X-Request-ID", r.Header.Get("X-Request-ID"))
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	payload, err := qr.URLPayload(body.URL)
@@ -121,7 +300,7 @@ func (s *Server) urlQR(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	render(w, "url", payload, imageOptions(body.Recovery, body.Size))
+	render(w, "url", payload, options)
 }
 
 func (s *Server) vcardQR(w http.ResponseWriter, r *http.Request) {
@@ -136,8 +315,16 @@ func (s *Server) vcardQR(w http.ResponseWriter, r *http.Request) {
 		Address      string `json:"address"`
 		Size         int    `json:"size"`
 		Recovery     string `json:"recovery"`
+		logoFields
 	}
-	if !decodeJSON(w, r, &body) {
+	multipartLogo, ok := decodeRequest(w, r, &body)
+	if !ok {
+		return
+	}
+	options, err := s.imageOptions(body.Recovery, body.Size, body.ShowLogo, body.LogoPNGBase64, multipartLogo)
+	if err != nil {
+		w.Header().Set("X-Request-ID", r.Header.Get("X-Request-ID"))
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	payload, err := qr.VCardPayload(body.FirstName, body.LastName, body.Organization, body.Title, body.Phone, body.Email, body.Website, body.Address)
@@ -145,7 +332,7 @@ func (s *Server) vcardQR(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	render(w, "vcard", payload, imageOptions(body.Recovery, body.Size))
+	render(w, "vcard", payload, options)
 }
 
 func (s *Server) wifiQR(w http.ResponseWriter, r *http.Request) {
@@ -156,8 +343,16 @@ func (s *Server) wifiQR(w http.ResponseWriter, r *http.Request) {
 		Hidden   bool   `json:"hidden"`
 		Size     int    `json:"size"`
 		Recovery string `json:"recovery"`
+		logoFields
 	}
-	if !decodeJSON(w, r, &body) {
+	multipartLogo, ok := decodeRequest(w, r, &body)
+	if !ok {
+		return
+	}
+	options, err := s.imageOptions(body.Recovery, body.Size, body.ShowLogo, body.LogoPNGBase64, multipartLogo)
+	if err != nil {
+		w.Header().Set("X-Request-ID", r.Header.Get("X-Request-ID"))
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	payload, err := qr.WiFiPayload(body.SSID, body.Password, body.Security, body.Hidden)
@@ -165,7 +360,7 @@ func (s *Server) wifiQR(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	render(w, "wifi", payload, imageOptions(body.Recovery, body.Size))
+	render(w, "wifi", payload, options)
 }
 
 func (s *Server) calendarQR(w http.ResponseWriter, r *http.Request) {
@@ -179,8 +374,16 @@ func (s *Server) calendarQR(w http.ResponseWriter, r *http.Request) {
 		AllDay      bool   `json:"all_day"`
 		Size        int    `json:"size"`
 		Recovery    string `json:"recovery"`
+		logoFields
 	}
-	if !decodeJSON(w, r, &body) {
+	multipartLogo, ok := decodeRequest(w, r, &body)
+	if !ok {
+		return
+	}
+	options, err := s.imageOptions(body.Recovery, body.Size, body.ShowLogo, body.LogoPNGBase64, multipartLogo)
+	if err != nil {
+		w.Header().Set("X-Request-ID", r.Header.Get("X-Request-ID"))
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	payload, err := qr.CalendarPayload(body.Title, body.Description, body.Location, body.Start, body.End, body.Timezone, body.AllDay)
@@ -188,7 +391,7 @@ func (s *Server) calendarQR(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	render(w, "calendar", payload, imageOptions(body.Recovery, body.Size))
+	render(w, "calendar", payload, options)
 }
 
 func (s *Server) textQR(w http.ResponseWriter, r *http.Request) {
@@ -196,8 +399,16 @@ func (s *Server) textQR(w http.ResponseWriter, r *http.Request) {
 		Text     string `json:"text"`
 		Size     int    `json:"size"`
 		Recovery string `json:"recovery"`
+		logoFields
 	}
-	if !decodeJSON(w, r, &body) {
+	multipartLogo, ok := decodeRequest(w, r, &body)
+	if !ok {
+		return
+	}
+	options, err := s.imageOptions(body.Recovery, body.Size, body.ShowLogo, body.LogoPNGBase64, multipartLogo)
+	if err != nil {
+		w.Header().Set("X-Request-ID", r.Header.Get("X-Request-ID"))
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	payload, err := qr.TextPayload(body.Text)
@@ -205,7 +416,7 @@ func (s *Server) textQR(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	render(w, "text", payload, imageOptions(body.Recovery, body.Size))
+	render(w, "text", payload, options)
 }
 
 func (s *Server) fileQR(w http.ResponseWriter, r *http.Request) {
@@ -215,8 +426,16 @@ func (s *Server) fileQR(w http.ResponseWriter, r *http.Request) {
 		Base64Content string `json:"base64_content"`
 		Size          int    `json:"size"`
 		Recovery      string `json:"recovery"`
+		logoFields
 	}
-	if !decodeJSON(w, r, &body) {
+	multipartLogo, ok := decodeRequest(w, r, &body)
+	if !ok {
+		return
+	}
+	options, err := s.imageOptions(body.Recovery, body.Size, body.ShowLogo, body.LogoPNGBase64, multipartLogo)
+	if err != nil {
+		w.Header().Set("X-Request-ID", r.Header.Get("X-Request-ID"))
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	payload, err := qr.FilePayload(body.Filename, body.MIMEType, body.Base64Content)
@@ -224,7 +443,7 @@ func (s *Server) fileQR(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	render(w, "file", payload, imageOptions(body.Recovery, body.Size))
+	render(w, "file", payload, options)
 }
 
 func (s *Server) numberQR(w http.ResponseWriter, r *http.Request) {
@@ -232,8 +451,16 @@ func (s *Server) numberQR(w http.ResponseWriter, r *http.Request) {
 		Number   string `json:"number"`
 		Size     int    `json:"size"`
 		Recovery string `json:"recovery"`
+		logoFields
 	}
-	if !decodeJSON(w, r, &body) {
+	multipartLogo, ok := decodeRequest(w, r, &body)
+	if !ok {
+		return
+	}
+	options, err := s.imageOptions(body.Recovery, body.Size, body.ShowLogo, body.LogoPNGBase64, multipartLogo)
+	if err != nil {
+		w.Header().Set("X-Request-ID", r.Header.Get("X-Request-ID"))
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	payload, err := qr.NumberPayload(body.Number)
@@ -241,7 +468,7 @@ func (s *Server) numberQR(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	render(w, "number", payload, imageOptions(body.Recovery, body.Size))
+	render(w, "number", payload, options)
 }
 
 func (s *Server) emailQR(w http.ResponseWriter, r *http.Request) {
@@ -251,8 +478,16 @@ func (s *Server) emailQR(w http.ResponseWriter, r *http.Request) {
 		Body     string `json:"body"`
 		Size     int    `json:"size"`
 		Recovery string `json:"recovery"`
+		logoFields
 	}
-	if !decodeJSON(w, r, &body) {
+	multipartLogo, ok := decodeRequest(w, r, &body)
+	if !ok {
+		return
+	}
+	options, err := s.imageOptions(body.Recovery, body.Size, body.ShowLogo, body.LogoPNGBase64, multipartLogo)
+	if err != nil {
+		w.Header().Set("X-Request-ID", r.Header.Get("X-Request-ID"))
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	payload, err := qr.EmailPayload(body.Email, body.Subject, body.Body)
@@ -260,7 +495,7 @@ func (s *Server) emailQR(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	render(w, "email", payload, imageOptions(body.Recovery, body.Size))
+	render(w, "email", payload, options)
 }
 
 func (s *Server) smsQR(w http.ResponseWriter, r *http.Request) {
@@ -269,8 +504,16 @@ func (s *Server) smsQR(w http.ResponseWriter, r *http.Request) {
 		Body     string `json:"body"`
 		Size     int    `json:"size"`
 		Recovery string `json:"recovery"`
+		logoFields
 	}
-	if !decodeJSON(w, r, &body) {
+	multipartLogo, ok := decodeRequest(w, r, &body)
+	if !ok {
+		return
+	}
+	options, err := s.imageOptions(body.Recovery, body.Size, body.ShowLogo, body.LogoPNGBase64, multipartLogo)
+	if err != nil {
+		w.Header().Set("X-Request-ID", r.Header.Get("X-Request-ID"))
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	payload, err := qr.SMSPayload(body.Phone, body.Body)
@@ -278,7 +521,7 @@ func (s *Server) smsQR(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	render(w, "sms", payload, imageOptions(body.Recovery, body.Size))
+	render(w, "sms", payload, options)
 }
 
 func (s *Server) geolocationQR(w http.ResponseWriter, r *http.Request) {
@@ -288,8 +531,16 @@ func (s *Server) geolocationQR(w http.ResponseWriter, r *http.Request) {
 		Label     string  `json:"label"`
 		Size      int     `json:"size"`
 		Recovery  string  `json:"recovery"`
+		logoFields
 	}
-	if !decodeJSON(w, r, &body) {
+	multipartLogo, ok := decodeRequest(w, r, &body)
+	if !ok {
+		return
+	}
+	options, err := s.imageOptions(body.Recovery, body.Size, body.ShowLogo, body.LogoPNGBase64, multipartLogo)
+	if err != nil {
+		w.Header().Set("X-Request-ID", r.Header.Get("X-Request-ID"))
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	payload, err := qr.GeolocationPayload(body.Latitude, body.Longitude, body.Label)
@@ -297,5 +548,5 @@ func (s *Server) geolocationQR(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	render(w, "geolocation", payload, imageOptions(body.Recovery, body.Size))
+	render(w, "geolocation", payload, options)
 }

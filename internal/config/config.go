@@ -9,12 +9,14 @@ import (
 )
 
 type Config struct {
-	Address         string
-	APIKey          string
-	ReadTimeout     time.Duration
-	WriteTimeout    time.Duration
-	IdleTimeout     time.Duration
-	ShutdownTimeout time.Duration
+	Address          string
+	APIKey           string
+	FallbackLogoPath string
+	LogoMaxBytes     int
+	ReadTimeout      time.Duration
+	WriteTimeout     time.Duration
+	IdleTimeout      time.Duration
+	ShutdownTimeout  time.Duration
 }
 
 func Load() (Config, error) {
@@ -48,8 +50,22 @@ func Load() (Config, error) {
 		address = ":8080"
 	}
 
+	fallbackLogoPath := strings.TrimSpace(os.Getenv("FALLBACK_LOGO_PATH"))
+	if fallbackLogoPath == "" {
+		fallbackLogoPath = "assets/fallback-logo.png"
+	}
+
+	logoMaxBytes, err := intFromEnv("LOGO_MAX_BYTES", 1024*1024)
+	if err != nil {
+		return Config{}, err
+	}
+	if logoMaxBytes < 1024 || logoMaxBytes > 10*1024*1024 {
+		return Config{}, fmt.Errorf("LOGO_MAX_BYTES must be between 1024 and 10485760")
+	}
+
 	return Config{
 		Address: address, APIKey: apiKey,
+		FallbackLogoPath: fallbackLogoPath, LogoMaxBytes: logoMaxBytes,
 		ReadTimeout: readTimeout, WriteTimeout: writeTimeout,
 		IdleTimeout: idleTimeout, ShutdownTimeout: shutdownTimeout,
 	}, nil

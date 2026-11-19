@@ -25,6 +25,7 @@ The container image:
 - Runs as the non-root `app` user.
 - Exposes port `8080`.
 - Includes a Docker health check for `/healthz`.
+- Includes `assets/fallback-logo.png` and validates it at startup.
 - Is stateless and requires no mounted volumes.
 
 For production, run containers with read-only root filesystems and resource limits where possible.
@@ -33,7 +34,7 @@ For production, run containers with read-only root filesystems and resource limi
 
 The manifests in `deploy/kubernetes/` are suitable as a starting point:
 
-- `configmap.yaml`: listen and timeout settings
+- `configmap.yaml`: listen, timeout, and logo settings
 - `secret.example.yaml`: placeholder API-key Secret
 - `deployment.yaml`: two replicas, probes, resources, and security context
 - `service.yaml`: internal port 80 mapped to container port 8080
@@ -74,6 +75,14 @@ ghcr.io/faolanbig/qr-code-api-server:latest
 ```
 
 Build and push a tagged image into your registry, or change `spec.template.spec.containers[].image` to match an approved image.
+
+## Logo configuration
+
+The image includes `/app/assets/fallback-logo.png`, and the ConfigMap points `FALLBACK_LOGO_PATH` to it. Override the path by mounting or baking a replacement PNG and updating `FALLBACK_LOGO_PATH`.
+
+The server validates the fallback PNG and fails startup if it is missing or invalid. `LOGO_MAX_BYTES` limits custom upload and Base64 PNG sizes and defaults to `1048576`.
+
+For a read-only container, mount a writable `/tmp` only if needed. Logo decoding does not write logo files or temporary data.
 
 ## Network security
 

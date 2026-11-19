@@ -12,6 +12,7 @@ A production-oriented HTTP service written in Go that converts structured inform
 - Small-file payload QR codes for embeddable data URIs
 - Number QR codes
 - Email, SMS, and geolocation QR codes as useful additional types
+- Optional custom PNG logos or a server-configured fallback logo at the QR center
 - API-key authentication via `X-API-Key` or `Authorization: Bearer`
 - JSON validation, structured errors, request logging, security headers, and graceful shutdown
 - Kubernetes Deployment, Service, ConfigMap, and Secret example
@@ -76,7 +77,9 @@ POST /api/v1/qr/geolocation
 GET  /api/v1/
 ```
 
-All generation endpoints accept `size` (128–2048 pixels) and `recovery` (`low`, `medium`, `high`, or `highest`). The defaults are `256` and `medium`.
+All generation endpoints accept `size` (128–2048 pixels) and `recovery` (`low`, `medium`, `high`, or `highest`). The defaults are `256` and `medium`. They also accept `show_logo` and `logo_png_base64`; alternatively, callers may use `multipart/form-data` and upload the PNG as `logo` or `logo_file`.
+
+When `show_logo=true` and no custom PNG is supplied, the server uses `FALLBACK_LOGO_PATH`. Invalid custom PNGs return `400 Bad Request`; logo rendering never silently falls back to an unrelated image.
 
 Successful responses contain the generated PNG inside the JSON response:
 
@@ -87,6 +90,8 @@ Successful responses contain the generated PNG inside the JSON response:
     "format": "png",
     "size": 256,
     "recovery": "medium",
+    "logo_included": true,
+    "logo_source": "fallback",
     "png_base64": "iVBORw0KGgo...",
     "data_uri": "data:image/png;base64,iVBORw0KGgo..."
   }
@@ -105,6 +110,8 @@ For complete request and response documentation, see [API documentation](docs/ap
 | `WRITE_TIMEOUT` | No | `10s` | HTTP write timeout |
 | `IDLE_TIMEOUT` | No | `60s` | HTTP keep-alive timeout |
 | `SHUTDOWN_TIMEOUT` | No | `15s` | Graceful shutdown timeout |
+| `FALLBACK_LOGO_PATH` | No | `assets/fallback-logo.png` | PNG used when `show_logo=true` has no custom logo |
+| `LOGO_MAX_BYTES` | No | `1048576` | Maximum custom or fallback PNG size |
 
 Copy `.env.example` when preparing local environment configuration. `.env` is not loaded automatically; export the variables or use your process manager/container platform.
 
@@ -149,6 +156,7 @@ cmd/server/                 Application entry point
 internal/config/            Environment configuration
 internal/httpserver/        HTTP routing, middleware, handlers
 internal/qrcode/            Payload builders and PNG rendering
+assets/                     Default and fallback image assets
 deploy/kubernetes/          Kubernetes manifests and Kustomize entry point
 docs/                       API and deployment documentation
 Dockerfile                  Multi-stage, non-root container image
@@ -169,3 +177,5 @@ LICENSE                     MIT license
 - File QR codes encode a data URI directly. They are suitable for small files only; the API rejects files larger than 1024 decoded bytes.
 - QR payloads are limited by QR-code capacity. The selected library enforces its own maximum.
 - No built-in horizontal scaling state is required; generation is stateless.
+- Custom logos must be PNG images with dimensions between 16×16 and 1024×1024 pixels.
+- The configured fallback logo is loaded at startup and must be a valid PNG.

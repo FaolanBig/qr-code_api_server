@@ -33,8 +33,12 @@ The API key must contain at least 16 characters. Authentication failures return 
 |---|---|---|---|
 | `size` | integer | `256` | PNG width and height; range 128–2048 |
 | `recovery` | string | `medium` | `low`, `medium`, `high`, or `highest` |
+| `show_logo` | boolean | `false` | Place a PNG logo at the QR code center |
+| `logo_png_base64` | string | none | PNG encoded as Base64 for JSON requests |
 
-Unknown JSON fields are rejected. Request bodies are limited to 1 MiB.
+Unknown JSON fields are rejected. JSON request bodies are limited to 12 MiB. Multipart requests can upload a PNG in the `logo` or `logo_file` field. Custom PNGs are limited to `LOGO_MAX_BYTES` (default 1 MiB) and must be 16–1024 pixels wide and tall.
+
+If `show_logo=true`, a custom uploaded or Base64 PNG is used first. If neither is supplied, `FALLBACK_LOGO_PATH` is used. If fallback logo configuration is missing or invalid, the server exits during startup. Invalid supplied PNGs return `400 Bad Request` rather than generating a logo-free QR code.
 
 ## Response
 
@@ -47,6 +51,8 @@ A successful generation request returns `200 OK`:
     "format": "png",
     "size": 256,
     "recovery": "medium",
+    "logo_included": true,
+    "logo_source": "fallback",
     "png_base64": "...",
     "data_uri": "data:image/png;base64,..."
   }
@@ -76,6 +82,43 @@ The API never returns a QR-code download URL. Clients can decode `png_base64` or
 ## API index
 
 `GET /api/v1/` requires authentication.
+
+## Logo examples
+
+JSON request:
+
+```json
+{
+  "url": "https://example.com",
+  "show_logo": true,
+  "logo_png_base64": "iVBORw0KGgo...",
+  "size": 256,
+  "recovery": "high"
+}
+```
+
+Multipart request:
+
+```bash
+curl --fail --request POST http://localhost:8080/api/v1/qr/url \
+  --header 'X-API-Key: replace-with-at-least-16-random-characters' \
+  --form 'url=https://example.com' \
+  --form 'show_logo=true' \
+  --form 'size=256' \
+  --form 'recovery=high' \
+  --form 'logo=@./logo.png;type=image/png'
+```
+
+To use the server fallback logo:
+
+```json
+{
+  "url": "https://example.com",
+  "show_logo": true
+}
+```
+
+When custom and fallback logos are both absent, `show_logo=true` returns `400 Bad Request`.
 
 ## URL
 

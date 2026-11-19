@@ -10,6 +10,7 @@ import (
 
 	"github.com/FaolanBig/qr-code_api_server/internal/config"
 	"github.com/FaolanBig/qr-code_api_server/internal/httpserver"
+	qr "github.com/FaolanBig/qr-code_api_server/internal/qrcode"
 )
 
 func main() {
@@ -20,9 +21,24 @@ func main() {
 		os.Exit(1)
 	}
 
+	fallbackLogo, err := os.ReadFile(cfg.FallbackLogoPath)
+	if err != nil {
+		logger.Error("fallback logo could not be read", "path", cfg.FallbackLogoPath, "error", err)
+		os.Exit(1)
+	}
+	if _, err := qr.ValidatePNGLogo(fallbackLogo, cfg.LogoMaxBytes); err != nil {
+		logger.Error("fallback logo is invalid", "path", cfg.FallbackLogoPath, "error", err)
+		os.Exit(1)
+	}
+
 	server := &http.Server{
-		Addr:         cfg.Address,
-		Handler:      httpserver.New(cfg.APIKey, logger).Handler(),
+		Addr: cfg.Address,
+		Handler: httpserver.New(
+			cfg.APIKey,
+			logger,
+			httpserver.WithFallbackLogo(fallbackLogo),
+			httpserver.WithLogoMaxBytes(cfg.LogoMaxBytes),
+		).Handler(),
 		ReadTimeout:  cfg.ReadTimeout,
 		WriteTimeout: cfg.WriteTimeout,
 		IdleTimeout:  cfg.IdleTimeout,

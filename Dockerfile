@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 WORKDIR /app
 COPY --from=build --chown=app:app /out/qrcode-api /app/qrcode-api
+COPY --chown=app:app assets /app/assets
 
 USER app
 EXPOSE 8080

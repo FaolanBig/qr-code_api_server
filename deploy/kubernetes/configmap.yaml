@@ -11,3 +11,5 @@ data:
   WRITE_TIMEOUT: "10s"
   IDLE_TIMEOUT: "60s"
   SHUTDOWN_TIMEOUT: "15s"
+  FALLBACK_LOGO_PATH: "/app/assets/fallback-logo.png"
+  LOGO_MAX_BYTES: "1048576"
