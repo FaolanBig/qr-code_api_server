@@ -1,0 +1,35 @@
+name: qr-code-api
+
+services:
+  api:
+    image: ghcr.io/faolanbig/qr-code-api-server:latest
+    pull_policy: always
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      API_KEY: "${API_KEY:?Set API_KEY in the shell or in a .env file}"
+      LISTEN_ADDRESS: "${LISTEN_ADDRESS:-:8080}"
+      READ_TIMEOUT: "${READ_TIMEOUT:-10s}"
+      WRITE_TIMEOUT: "${WRITE_TIMEOUT:-10s}"
+      IDLE_TIMEOUT: "${IDLE_TIMEOUT:-60s}"
+      SHUTDOWN_TIMEOUT: "${SHUTDOWN_TIMEOUT:-15s}"
+      FALLBACK_LOGO_PATH: "${FALLBACK_LOGO_PATH:-/app/assets/fallback-logo.png}"
+      LOGO_MAX_BYTES: "${LOGO_MAX_BYTES:-1048576}"
+      OPENAPI_PATH: "${OPENAPI_PATH:-/app/docs/openapi.yaml}"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'port="$${LISTEN_ADDRESS:-8080}"; port="$${port##*:}"; curl --fail --silent --show-error "http://127.0.0.1:$${port}/healthz"'
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
