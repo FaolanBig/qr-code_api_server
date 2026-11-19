@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: qr-code-api:local
+    image: ghcr.io/faolanbig/qr-code-api-server:latest
     restart: unless-stopped
     init: true
     ports:
