@@ -99,6 +99,10 @@ GET  /api/v1/
 
 All generation endpoints accept `size` (128–2048 pixels) and `recovery` (`low`, `medium`, `high`, or `highest`). The defaults are `256` and `medium`. They also accept `show_logo` and `logo_png_base64`; alternatively, callers may use `multipart/form-data` and upload the PNG as `logo` or `logo_file`.
 
+## Workato
+
+The SDK-format connector is available at [`workato/connector.rb`](workato/connector.rb). Import it as a custom connector, configure the API base URL and API key, and use it to call the health/readiness, OpenAPI, API index, and all ten QR-generation endpoints.
+
 When `show_logo=true` and no custom PNG is supplied, the server uses `FALLBACK_LOGO_PATH`. Invalid custom PNGs return `400 Bad Request`; logo rendering never silently falls back to an unrelated image.
 
 Successful responses contain the generated PNG inside the JSON response:
