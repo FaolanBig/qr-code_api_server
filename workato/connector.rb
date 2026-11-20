@@ -130,11 +130,43 @@
       end,
 
       execute: lambda do |_connection, input|
+        integer_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?\d+\z/)
+            value.strip.to_i
+          else
+            value
+          end
+        end
+
+        boolean_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          return value if value == true || value == false
+
+          case value.to_s.strip.downcase
+          when 'true', '1', 'yes', 'on'
+            true
+          when 'false', '0', 'no', 'off'
+            false
+          else
+            value
+          end
+        end
+
+        float_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\z/)
+            value.strip.to_f
+          else
+            value
+          end
+        end
+
         payload = {
           'url' => input['url'],
-          'size' => input['size'],
+          'size' => integer_value.call(input['size']),
           'recovery' => input['recovery'],
-          'show_logo' => input['show_logo'],
+          'show_logo' => boolean_value.call(input['show_logo']),
           'logo_png_base64' => input['logo_png_base64']
         }
         payload.delete_if { |_key, value| value.nil? || (value.is_a?(String) && value.empty?) }
@@ -190,13 +222,45 @@
       end,
 
       execute: lambda do |_connection, input|
+        integer_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?\d+\z/)
+            value.strip.to_i
+          else
+            value
+          end
+        end
+
+        boolean_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          return value if value == true || value == false
+
+          case value.to_s.strip.downcase
+          when 'true', '1', 'yes', 'on'
+            true
+          when 'false', '0', 'no', 'off'
+            false
+          else
+            value
+          end
+        end
+
+        float_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\z/)
+            value.strip.to_f
+          else
+            value
+          end
+        end
+
         payload = {
           'first_name' => input['first_name'], 'last_name' => input['last_name'],
           'organization' => input['organization'], 'title' => input['title'],
           'phone' => input['phone'], 'email' => input['email'],
           'website' => input['website'], 'address' => input['address'],
-          'size' => input['size'], 'recovery' => input['recovery'],
-          'show_logo' => input['show_logo'], 'logo_png_base64' => input['logo_png_base64']
+          'size' => integer_value.call(input['size']), 'recovery' => input['recovery'],
+          'show_logo' => boolean_value.call(input['show_logo']), 'logo_png_base64' => input['logo_png_base64']
         }
         payload.delete_if { |_key, value| value.nil? || (value.is_a?(String) && value.empty?) }
         logo = input['logo']
@@ -238,11 +302,43 @@
       end,
 
       execute: lambda do |_connection, input|
+        integer_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?\d+\z/)
+            value.strip.to_i
+          else
+            value
+          end
+        end
+
+        boolean_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          return value if value == true || value == false
+
+          case value.to_s.strip.downcase
+          when 'true', '1', 'yes', 'on'
+            true
+          when 'false', '0', 'no', 'off'
+            false
+          else
+            value
+          end
+        end
+
+        float_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\z/)
+            value.strip.to_f
+          else
+            value
+          end
+        end
+
         payload = {
           'ssid' => input['ssid'], 'password' => input['password'],
-          'security' => input['security'], 'hidden' => input['hidden'],
-          'size' => input['size'], 'recovery' => input['recovery'],
-          'show_logo' => input['show_logo'], 'logo_png_base64' => input['logo_png_base64']
+          'security' => input['security'], 'hidden' => boolean_value.call(input['hidden']),
+          'size' => integer_value.call(input['size']), 'recovery' => input['recovery'],
+          'show_logo' => boolean_value.call(input['show_logo']), 'logo_png_base64' => input['logo_png_base64']
         }
         payload.delete_if { |_key, value| value.nil? || (value.is_a?(String) && value.empty?) }
         logo = input['logo']
@@ -287,12 +383,44 @@
       end,
 
       execute: lambda do |_connection, input|
+        integer_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?\d+\z/)
+            value.strip.to_i
+          else
+            value
+          end
+        end
+
+        boolean_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          return value if value == true || value == false
+
+          case value.to_s.strip.downcase
+          when 'true', '1', 'yes', 'on'
+            true
+          when 'false', '0', 'no', 'off'
+            false
+          else
+            value
+          end
+        end
+
+        float_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\z/)
+            value.strip.to_f
+          else
+            value
+          end
+        end
+
         payload = {
           'title' => input['title'], 'description' => input['description'],
           'location' => input['location'], 'start' => input['start'],
           'end' => input['end'], 'timezone' => input['timezone'],
-          'all_day' => input['all_day'], 'size' => input['size'],
-          'recovery' => input['recovery'], 'show_logo' => input['show_logo'],
+          'all_day' => boolean_value.call(input['all_day']), 'size' => integer_value.call(input['size']),
+          'recovery' => input['recovery'], 'show_logo' => boolean_value.call(input['show_logo']),
           'logo_png_base64' => input['logo_png_base64']
         }
         payload.delete_if { |_key, value| value.nil? || (value.is_a?(String) && value.empty?) }
@@ -332,9 +460,41 @@
       end,
 
       execute: lambda do |_connection, input|
+        integer_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?\d+\z/)
+            value.strip.to_i
+          else
+            value
+          end
+        end
+
+        boolean_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          return value if value == true || value == false
+
+          case value.to_s.strip.downcase
+          when 'true', '1', 'yes', 'on'
+            true
+          when 'false', '0', 'no', 'off'
+            false
+          else
+            value
+          end
+        end
+
+        float_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\z/)
+            value.strip.to_f
+          else
+            value
+          end
+        end
+
         payload = {
-          'text' => input['text'], 'size' => input['size'],
-          'recovery' => input['recovery'], 'show_logo' => input['show_logo'],
+          'text' => input['text'], 'size' => integer_value.call(input['size']),
+          'recovery' => input['recovery'], 'show_logo' => boolean_value.call(input['show_logo']),
           'logo_png_base64' => input['logo_png_base64']
         }
         payload.delete_if { |_key, value| value.nil? || (value.is_a?(String) && value.empty?) }
@@ -376,10 +536,42 @@
       end,
 
       execute: lambda do |_connection, input|
+        integer_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?\d+\z/)
+            value.strip.to_i
+          else
+            value
+          end
+        end
+
+        boolean_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          return value if value == true || value == false
+
+          case value.to_s.strip.downcase
+          when 'true', '1', 'yes', 'on'
+            true
+          when 'false', '0', 'no', 'off'
+            false
+          else
+            value
+          end
+        end
+
+        float_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\z/)
+            value.strip.to_f
+          else
+            value
+          end
+        end
+
         payload = {
           'filename' => input['filename'], 'mime_type' => input['mime_type'],
-          'base64_content' => input['base64_content'], 'size' => input['size'],
-          'recovery' => input['recovery'], 'show_logo' => input['show_logo'],
+          'base64_content' => input['base64_content'], 'size' => integer_value.call(input['size']),
+          'recovery' => input['recovery'], 'show_logo' => boolean_value.call(input['show_logo']),
           'logo_png_base64' => input['logo_png_base64']
         }
         payload.delete_if { |_key, value| value.nil? || (value.is_a?(String) && value.empty?) }
@@ -419,9 +611,41 @@
       end,
 
       execute: lambda do |_connection, input|
+        integer_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?\d+\z/)
+            value.strip.to_i
+          else
+            value
+          end
+        end
+
+        boolean_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          return value if value == true || value == false
+
+          case value.to_s.strip.downcase
+          when 'true', '1', 'yes', 'on'
+            true
+          when 'false', '0', 'no', 'off'
+            false
+          else
+            value
+          end
+        end
+
+        float_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\z/)
+            value.strip.to_f
+          else
+            value
+          end
+        end
+
         payload = {
-          'number' => input['number'], 'size' => input['size'],
-          'recovery' => input['recovery'], 'show_logo' => input['show_logo'],
+          'number' => input['number'], 'size' => integer_value.call(input['size']),
+          'recovery' => input['recovery'], 'show_logo' => boolean_value.call(input['show_logo']),
           'logo_png_base64' => input['logo_png_base64']
         }
         payload.delete_if { |_key, value| value.nil? || (value.is_a?(String) && value.empty?) }
@@ -463,10 +687,42 @@
       end,
 
       execute: lambda do |_connection, input|
+        integer_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?\d+\z/)
+            value.strip.to_i
+          else
+            value
+          end
+        end
+
+        boolean_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          return value if value == true || value == false
+
+          case value.to_s.strip.downcase
+          when 'true', '1', 'yes', 'on'
+            true
+          when 'false', '0', 'no', 'off'
+            false
+          else
+            value
+          end
+        end
+
+        float_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\z/)
+            value.strip.to_f
+          else
+            value
+          end
+        end
+
         payload = {
           'email' => input['email'], 'subject' => input['subject'],
-          'body' => input['body'], 'size' => input['size'],
-          'recovery' => input['recovery'], 'show_logo' => input['show_logo'],
+          'body' => input['body'], 'size' => integer_value.call(input['size']),
+          'recovery' => input['recovery'], 'show_logo' => boolean_value.call(input['show_logo']),
           'logo_png_base64' => input['logo_png_base64']
         }
         payload.delete_if { |_key, value| value.nil? || (value.is_a?(String) && value.empty?) }
@@ -507,10 +763,42 @@
       end,
 
       execute: lambda do |_connection, input|
+        integer_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?\d+\z/)
+            value.strip.to_i
+          else
+            value
+          end
+        end
+
+        boolean_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          return value if value == true || value == false
+
+          case value.to_s.strip.downcase
+          when 'true', '1', 'yes', 'on'
+            true
+          when 'false', '0', 'no', 'off'
+            false
+          else
+            value
+          end
+        end
+
+        float_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\z/)
+            value.strip.to_f
+          else
+            value
+          end
+        end
+
         payload = {
           'phone' => input['phone'], 'body' => input['body'],
-          'size' => input['size'], 'recovery' => input['recovery'],
-          'show_logo' => input['show_logo'], 'logo_png_base64' => input['logo_png_base64']
+          'size' => integer_value.call(input['size']), 'recovery' => input['recovery'],
+          'show_logo' => boolean_value.call(input['show_logo']), 'logo_png_base64' => input['logo_png_base64']
         }
         payload.delete_if { |_key, value| value.nil? || (value.is_a?(String) && value.empty?) }
         logo = input['logo']
@@ -551,10 +839,42 @@
       end,
 
       execute: lambda do |_connection, input|
+        integer_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?\d+\z/)
+            value.strip.to_i
+          else
+            value
+          end
+        end
+
+        boolean_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          return value if value == true || value == false
+
+          case value.to_s.strip.downcase
+          when 'true', '1', 'yes', 'on'
+            true
+          when 'false', '0', 'no', 'off'
+            false
+          else
+            value
+          end
+        end
+
+        float_value = lambda do |value|
+          return nil if value.nil? || (value.is_a?(String) && value.strip.empty?)
+          if value.is_a?(String) && value.strip.match?(/\A[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\z/)
+            value.strip.to_f
+          else
+            value
+          end
+        end
+
         payload = {
-          'latitude' => input['latitude'], 'longitude' => input['longitude'],
-          'label' => input['label'], 'size' => input['size'],
-          'recovery' => input['recovery'], 'show_logo' => input['show_logo'],
+          'latitude' => float_value.call(input['latitude']), 'longitude' => float_value.call(input['longitude']),
+          'label' => input['label'], 'size' => integer_value.call(input['size']),
+          'recovery' => input['recovery'], 'show_logo' => boolean_value.call(input['show_logo']),
           'logo_png_base64' => input['logo_png_base64']
         }
         payload.delete_if { |_key, value| value.nil? || (value.is_a?(String) && value.empty?) }
