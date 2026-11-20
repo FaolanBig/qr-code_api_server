@@ -20,12 +20,8 @@ services:
       OPENAPI_PATH: "${OPENAPI_PATH:-/app/docs/openapi.yaml}"
     healthcheck:
       test:
-        - CMD
-        - curl
-        - --fail
-        - --silent
-        - --show-error
-        - http://127.0.0.1:8080/healthz
+        - CMD-SHELL
+        - 'port="$${LISTEN_ADDRESS:-8080}"; port="$${port##*:}"; curl --fail --silent --show-error "http://127.0.0.1:$${port}/healthz"'
       interval: 30s
       timeout: 3s
       retries: 3

@@ -125,7 +125,7 @@ For complete request and response documentation, see [API documentation](docs/ap
 | Variable | Required | Default | Description |
 |---|---:|---|---|
 | `API_KEY` | Yes | none | API key; at least 16 characters |
-| `LISTEN_ADDRESS` | No | `:8080` | HTTP listen address |
+| `LISTEN_ADDRESS` | No | `:8080` | HTTP listen address; port-only values such as `8080` or `80` are accepted |
 | `READ_TIMEOUT` | No | `10s` | HTTP read timeout |
 | `WRITE_TIMEOUT` | No | `10s` | HTTP write timeout |
 | `IDLE_TIMEOUT` | No | `60s` | HTTP keep-alive timeout |

@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -46,9 +47,9 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
-	address := strings.TrimSpace(os.Getenv("LISTEN_ADDRESS"))
-	if address == "" {
-		address = ":8080"
+	address, err := listenAddressFromEnv("LISTEN_ADDRESS", ":8080")
+	if err != nil {
+		return Config{}, err
 	}
 
 	fallbackLogoPath := strings.TrimSpace(os.Getenv("FALLBACK_LOGO_PATH"))
@@ -75,6 +76,30 @@ func Load() (Config, error) {
 		ReadTimeout: readTimeout, WriteTimeout: writeTimeout,
 		IdleTimeout: idleTimeout, ShutdownTimeout: shutdownTimeout,
 	}, nil
+}
+
+func listenAddressFromEnv(name, fallback string) (string, error) {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		value = fallback
+	}
+
+	if port, err := strconv.Atoi(value); err == nil {
+		if port < 1 || port > 65535 {
+			return "", fmt.Errorf("%s port must be between 1 and 65535", name)
+		}
+		return fmt.Sprintf(":%d", port), nil
+	}
+
+	_, port, err := net.SplitHostPort(value)
+	if err != nil {
+		return "", fmt.Errorf("%s must be a port or host:port address: %w", name, err)
+	}
+	portNumber, err := strconv.Atoi(port)
+	if err != nil || portNumber < 1 || portNumber > 65535 {
+		return "", fmt.Errorf("%s port must be a number between 1 and 65535", name)
+	}
+	return value, nil
 }
 
 func durationFromEnv(name string, fallback time.Duration) (time.Duration, error) {
