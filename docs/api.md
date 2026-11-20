@@ -40,7 +40,7 @@ The API key must contain at least 16 characters. Authentication failures return 
 
 Unknown JSON fields are rejected. JSON request bodies are limited to 12 MiB. Multipart requests can upload a PNG in the `logo` or `logo_file` field. Custom PNGs are limited to `LOGO_MAX_BYTES` (default 1 MiB) and must be 16–1024 pixels wide and tall.
 
-If `show_logo=true`, a custom uploaded or Base64 PNG is used first. If neither is supplied, `FALLBACK_LOGO_PATH` is used. If fallback logo configuration is missing or invalid, the server exits during startup. Invalid supplied PNGs return `400 Bad Request` rather than generating a logo-free QR code.
+If `show_logo=true`, a custom uploaded or Base64 PNG is used first. If neither is supplied, `FALLBACK_LOGO_PATH` is used. If fallback logo configuration is missing or invalid, the server exits during startup. Invalid supplied PNGs return `400 Bad Request` rather than generating a logo-free QR code. Logos are rendered in a small clear zone and automatically use the `highest` recovery level for reliable scanning.
 
 ## Response
 

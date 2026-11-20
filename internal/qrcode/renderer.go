@@ -59,6 +59,14 @@ func Generate(payloadType, payload string, options ImageOptions) (Result, error)
 		return Result{}, fmt.Errorf("recovery must be low, medium, high, or highest")
 	}
 
+	// A logo obscures real QR modules. Encoding at the highest available
+	// recovery level gives the decoder enough redundancy to reconstruct the
+	// covered area reliably.
+	if len(options.Logo) > 0 {
+		level = lib.Highest
+		recoveryName = "highest"
+	}
+
 	pngBytes, err := lib.Encode(payload, level, options.Size)
 	if err != nil {
 		return Result{}, fmt.Errorf("unable to encode QR code: %w", err)
@@ -144,24 +152,35 @@ func overlayLogo(qrBytes, logoBytes []byte, qrSize int) ([]byte, error) {
 		return nil, err
 	}
 
-	canvas := image.NewRGBA(image.Rect(0, 0, qrSize, qrSize))
-	draw.Draw(canvas, canvas.Bounds(), &image.Uniform{C: color.RGBA{R: 255, G: 255, B: 255, A: 255}}, image.Point{}, draw.Src)
-	draw.Draw(canvas, canvas.Bounds(), qrImage, qrImage.Bounds().Min, draw.Over)
+	qrBounds := qrImage.Bounds()
+	actualSize := qrBounds.Dx()
+	if qrBounds.Dy() < actualSize {
+		actualSize = qrBounds.Dy()
+	}
+	if actualSize <= 0 {
+		return nil, fmt.Errorf("unable to decode generated QR code")
+	}
 
-	logoSize := qrSize / 5
+	canvas := image.NewRGBA(image.Rect(0, 0, actualSize, actualSize))
+	draw.Draw(canvas, canvas.Bounds(), &image.Uniform{C: color.RGBA{R: 255, G: 255, B: 255, A: 255}}, image.Point{}, draw.Src)
+	draw.Draw(canvas, canvas.Bounds(), qrImage, qrBounds.Min, draw.Over)
+
+	// Keep the logo small and give it a white clear zone. This leaves substantially
+	// more of the data modules intact than overlaying it directly on the QR code.
+	logoSize := actualSize / 6
 	if logoSize < 24 {
 		logoSize = 24
 	}
-	if logoSize > qrSize/4 {
-		logoSize = qrSize / 4
+	if logoSize > actualSize/5 {
+		logoSize = actualSize / 5
 	}
-	padding := qrSize / 40
+	padding := actualSize / 50
 	if padding < 4 {
 		padding = 4
 	}
 
 	outerSize := logoSize + 2*padding
-	centerX, centerY := qrSize/2, qrSize/2
+	centerX, centerY := actualSize/2, actualSize/2
 	outer := image.Rect(centerX-outerSize/2, centerY-outerSize/2, centerX+(outerSize+1)/2, centerY+(outerSize+1)/2)
 	draw.Draw(canvas, outer, &image.Uniform{C: color.RGBA{R: 255, G: 255, B: 255, A: 255}}, image.Point{}, draw.Src)
 
@@ -176,11 +195,17 @@ func overlayLogo(qrBytes, logoBytes []byte, qrSize int) ([]byte, error) {
 }
 
 func resizeNearest(dst *image.RGBA, bounds image.Rectangle, src image.Image) {
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			srcX := src.Bounds().Min.X + (x-bounds.Min.X)*(src.Bounds().Dx()-1)/(bounds.Dx()-1)
-			srcY := src.Bounds().Min.Y + (y-bounds.Min.Y)*(src.Bounds().Dy()-1)/(bounds.Dy()-1)
-			dst.Set(x, y, src.At(srcX, srcY))
+	if bounds.Dx() <= 0 || bounds.Dy() <= 0 {
+		return
+	}
+
+	scaled := image.NewRGBA(image.Rect(0, 0, bounds.Dx(), bounds.Dy()))
+	for y := 0; y < bounds.Dy(); y++ {
+		srcY := src.Bounds().Min.Y + y*src.Bounds().Dy()/bounds.Dy()
+		for x := 0; x < bounds.Dx(); x++ {
+			srcX := src.Bounds().Min.X + x*src.Bounds().Dx()/bounds.Dx()
+			scaled.Set(x, y, src.At(srcX, srcY))
 		}
 	}
+	draw.Draw(dst, bounds, scaled, image.Point{}, draw.Over)
 }
