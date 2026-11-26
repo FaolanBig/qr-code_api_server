@@ -98,6 +98,19 @@ func TestAPIKeyRequired(t *testing.T) {
 	}
 }
 
+func TestAPIIndexVersion(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/", nil)
+	request.Header.Set("X-API-Key", "test-api-key-123456")
+	response := httptest.NewRecorder()
+	testHandler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("got status %d: %s", response.Code, response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), `"version":"v2.0.0-rc"`) {
+		t.Fatalf("unexpected API index: %s", response.Body.String())
+	}
+}
+
 func TestURLEndpoint(t *testing.T) {
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/qr/url", strings.NewReader(`{"url":"https://example.com","size":256,"recovery":"high"}`))
 	request.Header.Set("Content-Type", "application/json")
