@@ -34,6 +34,34 @@ func makeServerTestPNG(t *testing.T) []byte {
 	return data.Bytes()
 }
 
+func TestHostedWebsite(t *testing.T) {
+	handler := testHandler()
+	tests := []struct {
+		path        string
+		contentType string
+		contains    string
+	}{
+		{"/", "text/html; charset=utf-8", "QR Studio"},
+		{"/app.css", "text/css; charset=utf-8", ".app-shell"},
+		{"/app.js", "application/javascript; charset=utf-8", "async function generate"},
+	}
+
+	for _, test := range tests {
+		request := httptest.NewRequest(http.MethodGet, test.path, nil)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Errorf("%s returned %d", test.path, response.Code)
+		}
+		if got := response.Header().Get("Content-Type"); got != test.contentType {
+			t.Errorf("%s content type got %q, want %q", test.path, got, test.contentType)
+		}
+		if !strings.Contains(response.Body.String(), test.contains) {
+			t.Errorf("%s missing %q", test.path, test.contains)
+		}
+	}
+}
+
 func TestOpenAPIEndpoint(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/openapi.yaml", nil)
 	response := httptest.NewRecorder()

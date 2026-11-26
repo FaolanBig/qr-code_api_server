@@ -71,6 +71,9 @@ func (s *Server) Handler() http.Handler {
 	r.Use(requestLogger(s.logger))
 	r.Use(middleware.Recoverer)
 
+	r.Get("/", s.webIndex)
+	r.Get("/app.css", s.webStyles)
+	r.Get("/app.js", s.webScript)
 	r.Get("/healthz", s.health)
 	r.Get("/readyz", s.ready)
 	r.Get("/openapi.yaml", s.openAPI)

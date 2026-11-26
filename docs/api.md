@@ -6,7 +6,7 @@ The machine-readable OpenAPI 3.1 specification is available publicly at `/openap
 
 ## Authentication
 
-Use one of these headers for every API endpoint except `/healthz`, `/readyz`, and `/openapi.yaml`:
+Use one of these headers for every API endpoint except `/`, `/healthz`, `/readyz`, and `/openapi.yaml`:
 
 ```text
 X-API-Key: your-secret-api-key

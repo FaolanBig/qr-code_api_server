@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <title>QR Studio</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <main class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div>
+          <strong>QR Studio</strong>
+          <small>Code generator</small>
+        </div>
+      </div>
+
+      <nav class="type-nav" aria-label="QR code type">
+        <p class="nav-label">CONTENT TYPE</p>
+        <button class="type-button active" data-type="url" type="button"><span class="type-icon">↗</span><span>Website</span></button>
+        <button class="type-button" data-type="text" type="button"><span class="type-icon">T</span><span>Text</span></button>
+        <button class="type-button" data-type="vcard" type="button"><span class="type-icon">◎</span><span>Contact</span></button>
+        <button class="type-button" data-type="wifi" type="button"><span class="type-icon">⌁</span><span>Wi-Fi</span></button>
+        <button class="type-button" data-type="calendar" type="button"><span class="type-icon">□</span><span>Event</span></button>
+        <button class="type-button" data-type="email" type="button"><span class="type-icon">@</span><span>Email</span></button>
+        <button class="type-button" data-type="sms" type="button"><span class="type-icon">•••</span><span>SMS</span></button>
+        <button class="type-button" data-type="number" type="button"><span class="type-icon">#</span><span>Number</span></button>
+        <button class="type-button" data-type="geolocation" type="button"><span class="type-icon">⌖</span><span>Location</span></button>
+        <button class="type-button" data-type="file" type="button"><span class="type-icon">⇧</span><span>Small file</span></button>
+      </nav>
+
+      <div class="key-panel">
+        <div class="key-heading"><span>API key</span><span id="keyStatus" class="status-dot" title="No API key saved"></span></div>
+        <div class="key-row">
+          <input id="apiKey" type="password" autocomplete="current-password" placeholder="Enter API key" aria-label="API key">
+          <button id="saveKey" type="button" title="Save API key">Save</button>
+        </div>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <header class="workspace-header">
+        <div>
+          <p class="eyebrow">CREATE QR CODE</p>
+          <h1 id="typeTitle">Website</h1>
+        </div>
+        <div class="header-actions">
+          <button id="copyButton" class="icon-button" type="button" title="Copy QR image" disabled>
+            <span aria-hidden="true">⧉</span><span>Copy</span>
+          </button>
+          <button id="downloadButton" class="primary-button" type="button" disabled>
+            <span aria-hidden="true">↓</span><span>Download PNG</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="content-grid">
+        <section class="editor-card">
+          <div id="formFields" class="form-fields"></div>
+
+          <div class="customize-section">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">CUSTOMIZE</p>
+                <h2>Appearance</h2>
+              </div>
+            </div>
+
+            <div class="settings-grid">
+              <label class="field">
+                <span>Size <output id="sizeOutput">512 px</output></span>
+                <input id="size" type="range" min="128" max="2048" step="128" value="512">
+              </label>
+              <label class="field">
+                <span>Recovery</span>
+                <select id="recovery">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                  <option value="highest">Highest</option>
+                </select>
+              </label>
+            </div>
+
+            <label class="toggle-row" for="showLogo">
+              <div>
+                <strong>Center logo</strong>
+                <small>Use a custom PNG or the server fallback</small>
+              </div>
+              <input id="showLogo" type="checkbox">
+              <span class="toggle" aria-hidden="true"></span>
+            </label>
+
+            <label id="logoUploadWrap" class="upload compact-upload hidden" for="logoUpload">
+              <input id="logoUpload" type="file" accept="image/png">
+              <span class="upload-icon">＋</span>
+              <span><strong id="logoUploadName">Choose a PNG logo</strong><small>16–1024 px, 1 MB max</small></span>
+            </label>
+          </div>
+
+          <button id="generateButton" class="generate-button" type="button">
+            <span>Generate QR code</span><span aria-hidden="true">→</span>
+          </button>
+        </section>
+
+        <aside class="preview-card">
+          <div class="preview-heading">
+            <div>
+              <p class="eyebrow">PREVIEW</p>
+              <span id="previewMeta">512 × 512 px</span>
+            </div>
+            <span id="liveBadge" class="live-badge"><i></i> Live</span>
+          </div>
+
+          <div id="previewStage" class="preview-stage">
+            <div id="emptyState" class="empty-state">
+              <div class="ghost-qr" aria-hidden="true">
+                <i></i><i></i><i></i>
+              </div>
+              <strong>Your QR code appears here</strong>
+              <span>Add your content to get started</span>
+            </div>
+            <img id="qrPreview" alt="Generated QR code preview" hidden>
+            <div id="previewLoader" class="preview-loader" hidden><span></span></div>
+          </div>
+
+          <div id="statusMessage" class="status-message" role="status" aria-live="polite"></div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>

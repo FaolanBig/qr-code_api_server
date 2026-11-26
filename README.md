@@ -18,6 +18,7 @@ A production-oriented HTTP service written in Go that converts structured inform
 - Kubernetes Deployment, Service, ConfigMap, and Secret example
 - Small, non-root container with a basic shell and `curl`
 - Public OpenAPI 3.1 specification at `/openapi.yaml`
+- Sleek interactive QR-code web studio hosted alongside the API at `/`
 
 ## Quick start
 
@@ -28,7 +29,13 @@ export API_KEY="replace-with-at-least-16-random-characters"
 go run ./cmd/server
 ```
 
-Call the health endpoint:
+Open the hosted web interface:
+
+```text
+http://localhost:8080/
+```
+
+Enter the configured API key in the web interface, choose a QR type, and generate or download it. Call the health endpoint:
 
 ```bash
 curl http://localhost:8080/healthz
@@ -81,7 +88,7 @@ The Compose configuration runs `ghcr.io/faolanbig/qr-code-api-server:latest` rea
 
 ## API overview
 
-Authentication applies to every `/api/v1/*` endpoint. The public endpoints are `/healthz`, `/readyz`, and `/openapi.yaml`; `/openapi.yaml` contains the complete machine-readable API specification.
+Authentication applies to every `/api/v1/*` endpoint. The public endpoints are `/`, `/healthz`, `/readyz`, and `/openapi.yaml`; `/openapi.yaml` contains the complete machine-readable API specification. The hosted web interface calls the protected API endpoints locally and requires the configured API key.
 
 ```text
 POST /api/v1/qr/url
@@ -181,6 +188,7 @@ cmd/server/                 Application entry point
 internal/config/            Environment configuration
 internal/httpserver/        HTTP routing, middleware, handlers
 internal/qrcode/            Payload builders and PNG rendering
+internal/httpserver/web/    Embedded interactive web interface
 assets/                     Default and fallback image assets
 deploy/kubernetes/          Kubernetes manifests and Kustomize entry point
 docs/                       API and deployment documentation
