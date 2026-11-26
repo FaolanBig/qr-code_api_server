@@ -47,12 +47,56 @@ func makeTestPNG(t *testing.T) []byte {
 
 func TestGenerateWithLogo(t *testing.T) {
 	logo := makeTestPNG(t)
-	result, err := Generate("text", "Hello", ImageOptions{Size: 256, Recovery: "highest", Logo: logo, LogoSource: "custom"})
+	result, err := Generate("text", "Hello", ImageOptions{Size: 256, Recovery: "medium", Logo: logo, LogoSource: "custom"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !result.LogoIncluded || result.LogoSource != "custom" {
 		t.Fatalf("unexpected logo metadata: %+v", result)
+	}
+	if result.Recovery != "highest" {
+		t.Fatalf("logo QR should use highest recovery, got %q", result.Recovery)
+	}
+}
+
+func TestOverlayLogoUsesWhiteClearZoneAndCompositesTransparency(t *testing.T) {
+	logoImage := image.NewNRGBA(image.Rect(0, 0, 64, 64))
+	for y := 0; y < 64; y++ {
+		for x := 0; x < 64; x++ {
+			logoImage.Set(x, y, color.NRGBA{R: 30, G: 74, B: 200, A: 255})
+		}
+	}
+	logoImage.Set(0, 0, color.NRGBA{R: 0, G: 0, B: 0, A: 0})
+
+	var logoData bytes.Buffer
+	if err := png.Encode(&logoData, logoImage); err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := Generate("text", "Hello", ImageOptions{Size: 256, Recovery: "medium", Logo: logoData.Bytes()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	qrData, err := base64.StdEncoding.DecodeString(result.PNGBase64)
+	if err != nil {
+		t.Fatal(err)
+	}
+	qrImage, err := png.Decode(bytes.NewReader(qrData))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The logo clear zone is 52 pixels wide at 256 px. Verify its outer edge
+	// remains white and transparent logo pixels are composited onto white.
+	outerX, outerY := 103, 128
+	outerR, outerG, outerB, outerA := qrImage.At(outerX, outerY).RGBA()
+	if outerA == 0 || outerR != 0xffff || outerG != 0xffff || outerB != 0xffff {
+		t.Fatalf("logo clear zone is not white at (%d,%d)", outerX, outerY)
+	}
+
+	logoTopLeftR, logoTopLeftG, logoTopLeftB, logoTopLeftA := qrImage.At(107, 107).RGBA()
+	if logoTopLeftA == 0 || logoTopLeftR != 0xffff || logoTopLeftG != 0xffff || logoTopLeftB != 0xffff {
+		t.Fatalf("transparent logo pixel was not composited onto white: r=%04x g=%04x b=%04x a=%04x", logoTopLeftR, logoTopLeftG, logoTopLeftB, logoTopLeftA)
 	}
 }
 

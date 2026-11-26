@@ -97,7 +97,7 @@ POST /api/v1/qr/geolocation
 GET  /api/v1/
 ```
 
-All generation endpoints accept `size` (128–2048 pixels) and `recovery` (`low`, `medium`, `high`, or `highest`). The defaults are `256` and `medium`. They also accept `show_logo` and `logo_png_base64`; alternatively, callers may use `multipart/form-data` and upload the PNG as `logo` or `logo_file`.
+All generation endpoints accept `size` (128–2048 pixels) and `recovery` (`low`, `medium`, `high`, or `highest`). The defaults are `256` and `medium`. They also accept `show_logo` and `logo_png_base64`; alternatively, callers may use `multipart/form-data` and upload the PNG as `logo` or `logo_file`. Logos are rendered in a small clear zone and automatically use the `highest` recovery level for reliable scanning.
 
 ## Workato
 
@@ -113,7 +113,7 @@ Successful responses contain the generated PNG inside the JSON response:
     "type": "url",
     "format": "png",
     "size": 256,
-    "recovery": "medium",
+    "recovery": "highest",
     "logo_included": true,
     "logo_source": "fallback",
     "png_base64": "iVBORw0KGgo...",
