@@ -10,7 +10,7 @@ RUN CGO_ENABLED=0 go build -mod=vendor -trimpath -ldflags="-s -w" -o /out/qrcode
 FROM debian:12-slim
 
 LABEL org.opencontainers.image.title="QR Code API Server" \
-      org.opencontainers.image.version="v2.0.0-rc"
+      org.opencontainers.image.version="v2.0.1-rc"
 
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && \
     rm -rf /var/lib/apt/lists/* && \

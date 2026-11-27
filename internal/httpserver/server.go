@@ -117,7 +117,7 @@ func (s *Server) ready(w http.ResponseWriter, r *http.Request) {
 func (s *Server) apiIndex(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"name":    "QR Code API",
-		"version": "v2.0.0-rc",
+		"version": "v2.0.1-rc",
 		"endpoints": []string{
 			"POST /api/v1/qr/url", "POST /api/v1/qr/vcard", "POST /api/v1/qr/wifi",
 			"POST /api/v1/qr/calendar", "POST /api/v1/qr/text", "POST /api/v1/qr/file",

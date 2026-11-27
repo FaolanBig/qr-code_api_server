@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b1020">
-  <title>QR Studio</title>
+  <title>Big QR Studio</title>
   <link rel="stylesheet" href="/app.css">
 </head>
 <body>
@@ -18,8 +18,8 @@
           <span></span><span></span><span></span><span></span>
         </div>
         <div>
-          <strong>QR Studio</strong>
-          <small>v2.0.0-rc</small>
+          <strong>Big QR Studio</strong>
+          <small>v2.0.1-rc</small>
         </div>
       </div>
 
@@ -120,7 +120,7 @@
             <span id="liveBadge" class="live-badge"><i></i> Live</span>
           </div>
 
-          <div id="previewStage" class="preview-stage">
+          <div id="previewStage" class="preview-stage" aria-busy="false">
             <div id="emptyState" class="empty-state">
               <div class="ghost-qr" aria-hidden="true">
                 <i></i><i></i><i></i>
@@ -137,6 +137,8 @@
       </div>
     </section>
   </main>
+
+  <footer class="app-footer">© 2026 Carl Öttinger</footer>
 
   <script src="/app.js" defer></script>
 </body>

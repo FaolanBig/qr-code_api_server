@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: QR Code API
-  version: "v2.0.0-rc"
+  version: "v2.0.1-rc"
   description: |
     Stateless API for generating PNG QR codes. API generation endpoints accept
     JSON or multipart/form-data, require an API key, and return the PNG directly
@@ -317,7 +317,7 @@ components:
           type: string
         version:
           type: string
-          enum: [v2.0.0-rc]
+          enum: [v2.0.1-rc]
         endpoints:
           type: array
           items:
