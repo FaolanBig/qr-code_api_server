@@ -6,6 +6,7 @@
   const qrPreview = $("#qrPreview");
   const emptyState = $("#emptyState");
   const loader = $("#previewLoader");
+  const previewStage = $("#previewStage");
   const statusMessage = $("#statusMessage");
   const generateButton = $("#generateButton");
   const downloadButton = $("#downloadButton");
@@ -245,6 +246,12 @@
   }
 
   async function generate(manual = false) {
+    if (lastRequest) {
+      lastRequest.abort();
+      lastRequest = null;
+    }
+    setLoading(false);
+
     const key = apiKeyInput.value.trim();
     if (!key) {
       setStatus("Enter and save an API key to generate", "error");
@@ -264,8 +271,8 @@
       if (!prepared) return;
     }
 
-    if (lastRequest) lastRequest.abort();
-    lastRequest = new AbortController();
+    const request = new AbortController();
+    lastRequest = request;
 
     setLoading(true);
     setStatus("Generating QR code…");
@@ -275,7 +282,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json", "X-API-Key": key },
         body: JSON.stringify(values),
-        signal: lastRequest.signal
+        signal: request.signal
       });
       const body = await response.json();
       if (!response.ok) {
@@ -286,15 +293,29 @@
       qrPreview.src = currentDataUri;
       qrPreview.hidden = false;
       emptyState.hidden = true;
+
+      if (typeof qrPreview.decode === "function") {
+        await qrPreview.decode();
+      } else if (!qrPreview.complete) {
+        await new Promise((resolve, reject) => {
+          qrPreview.onload = resolve;
+          qrPreview.onerror = () => reject(new Error("QR preview could not be displayed"));
+        });
+      }
+
+      if (lastRequest !== request) return;
       downloadButton.disabled = false;
       copyButton.disabled = false;
       $("#previewMeta").textContent = `${body.qr_code.size} × ${body.qr_code.size} px`;
       setStatus("Ready — click download to save", "success");
     } catch (error) {
-      if (error.name === "AbortError") return;
+      if (error.name === "AbortError" || lastRequest !== request) return;
       setStatus(error.message, "error");
     } finally {
-      setLoading(false);
+      if (lastRequest === request) {
+        lastRequest = null;
+        setLoading(false);
+      }
     }
   }
 
@@ -305,6 +326,7 @@
 
   function setLoading(loading) {
     loader.hidden = !loading;
+    previewStage.setAttribute("aria-busy", String(loading));
     generateButton.disabled = loading;
   }
 
@@ -337,6 +359,12 @@
 
   document.querySelectorAll(".type-button").forEach((button) => {
     button.addEventListener("click", () => {
+      if (lastRequest) {
+        lastRequest.abort();
+        lastRequest = null;
+      }
+      setLoading(false);
+
       document.querySelectorAll(".type-button").forEach((item) => item.classList.remove("active"));
       button.classList.add("active");
       activeType = button.dataset.type;

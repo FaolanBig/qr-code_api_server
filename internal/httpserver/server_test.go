@@ -43,7 +43,9 @@ func TestHostedWebsite(t *testing.T) {
 	}{
 		{"/", "text/html; charset=utf-8", "QR Studio"},
 		{"/app.css", "text/css; charset=utf-8", ".app-shell"},
+		{"/app.css", "text/css; charset=utf-8", "[hidden]"},
 		{"/app.js", "application/javascript; charset=utf-8", "async function generate"},
+		{"/app.js", "application/javascript; charset=utf-8", "await qrPreview.decode()"},
 	}
 
 	for _, test := range tests {
