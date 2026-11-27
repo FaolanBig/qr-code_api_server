@@ -1,4 +1,4 @@
-# QR Code API Server — v2.0.0-rc
+# QR Code API Server — v2.0.1-rc
 
 A production-oriented HTTP service written in Go that converts structured information into QR codes. The API is versioned at `/api/v1`, protected by an API key, and returns PNG QR codes directly in JSON as both Base64 and a data URI.
 
@@ -129,7 +129,7 @@ Successful responses contain the generated PNG inside the JSON response:
 }
 ```
 
-For complete request and response documentation, see [API documentation](docs/api.md) or retrieve the machine-readable [OpenAPI specification](docs/openapi.yaml) through `/openapi.yaml`. Release-candidate notes are available in [docs/releases/v2.0.0-rc.md](docs/releases/v2.0.0-rc.md).
+For complete request and response documentation, see [API documentation](docs/api.md) or retrieve the machine-readable [OpenAPI specification](docs/openapi.yaml) through `/openapi.yaml`. Release-candidate notes are available in [docs/releases/v2.0.1-rc.md](docs/releases/v2.0.1-rc.md).
 
 ## Configuration
 

@@ -41,9 +41,10 @@ func TestHostedWebsite(t *testing.T) {
 		contentType string
 		contains    string
 	}{
-		{"/", "text/html; charset=utf-8", "QR Studio"},
+		{"/", "text/html; charset=utf-8", "Big QR Studio"},
 		{"/app.css", "text/css; charset=utf-8", ".app-shell"},
 		{"/app.css", "text/css; charset=utf-8", "[hidden]"},
+		{"/app.css", "text/css; charset=utf-8", ".app-footer"},
 		{"/app.js", "application/javascript; charset=utf-8", "async function generate"},
 		{"/app.js", "application/javascript; charset=utf-8", "await qrPreview.decode()"},
 	}
@@ -108,7 +109,7 @@ func TestAPIIndexVersion(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("got status %d: %s", response.Code, response.Body.String())
 	}
-	if !strings.Contains(response.Body.String(), `"version":"v2.0.0-rc"`) {
+	if !strings.Contains(response.Body.String(), `"version":"v2.0.1-rc"`) {
 		t.Fatalf("unexpected API index: %s", response.Body.String())
 	}
 }
