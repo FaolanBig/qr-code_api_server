@@ -71,6 +71,9 @@ func (s *Server) Handler() http.Handler {
 	r.Use(requestLogger(s.logger))
 	r.Use(middleware.Recoverer)
 
+	r.Get("/", s.webIndex)
+	r.Get("/app.css", s.webStyles)
+	r.Get("/app.js", s.webScript)
 	r.Get("/healthz", s.health)
 	r.Get("/readyz", s.ready)
 	r.Get("/openapi.yaml", s.openAPI)
@@ -114,7 +117,7 @@ func (s *Server) ready(w http.ResponseWriter, r *http.Request) {
 func (s *Server) apiIndex(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"name":    "QR Code API",
-		"version": "v1",
+		"version": "v2.0.0-rc",
 		"endpoints": []string{
 			"POST /api/v1/qr/url", "POST /api/v1/qr/vcard", "POST /api/v1/qr/wifi",
 			"POST /api/v1/qr/calendar", "POST /api/v1/qr/text", "POST /api/v1/qr/file",
