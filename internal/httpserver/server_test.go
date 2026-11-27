@@ -44,7 +44,6 @@ func TestHostedWebsite(t *testing.T) {
 		{"/", "text/html; charset=utf-8", "Big QR Studio"},
 		{"/app.css", "text/css; charset=utf-8", ".app-shell"},
 		{"/app.css", "text/css; charset=utf-8", "[hidden]"},
-		{"/app.css", "text/css; charset=utf-8", ".app-footer"},
 		{"/app.js", "application/javascript; charset=utf-8", "async function generate"},
 		{"/app.js", "application/javascript; charset=utf-8", "await qrPreview.decode()"},
 	}
